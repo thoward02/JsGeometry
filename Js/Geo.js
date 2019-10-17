@@ -27,6 +27,8 @@ class App{
     window.Args.Wave = {}
     window.Args.Wave.HeightSeed = 0.2;
 
+    window.Geoms = {};
+    window.Geoms.Planes = {}
 
     //Append
     this.Parent.appendChild(this.Renderer.domElement);
@@ -35,14 +37,33 @@ class App{
 
   Start(){
     //Populate Scene
-    this.Box = new THREE.BoxBufferGeometry( 4, 1, 4, 16, 4, 16);
-    var Mat = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true} );
-    var Final = new THREE.Mesh(this.Box, Mat);
-    this.Scene.add( Final );
+    let Planes = ["Planes1", "Planes2", "Planes3"]
+    for(var x in Planes){
+      //Create boxes
+      window.Geoms.Planes[x] = new THREE.PlaneBufferGeometry(16, 8, 256, 32);
+      var Mat = new THREE.MeshPhongMaterial( { color: 0xdddddd, specular: 0x009900, shininess: 90, emissive: 0xff0000, flatShading: false, wireframe:true} );
+      var Final = new THREE.Mesh(window.Geoms.Planes[x], Mat);
 
-    this.Box.attributes.position.dynamic = true;
+      //Offset
+      window.Geoms.Planes[x].position.setY = x / 10;
+      window.Geoms.Planes[x].position.setX = x / 10;
 
-    this.Camera.position.z = 5;
+      window.Geoms.Planes[x].attributes.position.dynamic = true;
+
+      //Add boxes
+      this.Scene.add( Final );
+
+    }
+
+    //Lights
+    let PointL = new THREE.PointLight(0xffffff, 20);
+    PointL.position.set(0, 5, 0);
+  	PointL.castShadow = false;
+
+    this.Scene.add( new THREE.AmbientLight( 0xffffff) );
+    this.Scene.add(PointL);
+
+    this.Camera.position.z = 8;
     this.Camera.position.y = 1;
 
     //Start render
@@ -61,15 +82,18 @@ class App{
     let time  = window.App.Clock.getElapsedTime() * 10;
 
     //Modify
-    let position = window.App.Box.attributes.position;
+    for(var items in window.Geoms.Planes){
+      let position = window.Geoms.Planes[items].attributes.position;
 
-    for ( let i = 0; i < position.count / 2; i ++ ) {
-					let y = (window.Args.Wave.HeightSeed) * Math.sin( ((time + i) * (i/50) * (1/50)) );
-					position.setY(i, y);
-		}
+      for ( let i = 0; i < position.count; i+=1 ) {
+        let z = (window.Args.Wave.HeightSeed) * Math.sin( ((time ** 2) * (i/2) * (1/50)) );
+        position.setZ(i, z);
+      }
 
 
-    window.App.Box.attributes.position.needsUpdate = true;
+      window.Geoms.Planes[items].attributes.position.needsUpdate = true;
+
+    }
 
     //Render
     window.App.Renderer.render(window.App.Scene, window.App.Camera);
